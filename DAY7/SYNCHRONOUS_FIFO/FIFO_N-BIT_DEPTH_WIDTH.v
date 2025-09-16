@@ -1,5 +1,5 @@
 `timescale 1ns / 1ps
-module SYNC_FIFO #(parameter FIFO_Depth = 3, DATA_WIDTH=32 )
+module SYNCHRONOUS_FIFO#(parameter FIFO_Depth = 1000, DATA_WIDTH=32 )
     (input clk, rst,cs,wr_en,rd_en,
      input [DATA_WIDTH-1:0] data_in,
      output reg [DATA_WIDTH-1:0] data_out,
@@ -7,22 +7,27 @@ module SYNC_FIFO #(parameter FIFO_Depth = 3, DATA_WIDTH=32 )
      
      localparam addrwidth=$clog2(FIFO_Depth);
      reg [DATA_WIDTH-1:0] FIFO [FIFO_Depth-1:0];
-     reg [addrwidth:0] counter;
-     reg [addrwidth-1:0] read_pointer;
-     reg [addrwidth-1:0] write_pointer;
+     reg [addrwidth:0] read_pointer;
+     reg [addrwidth:0] write_pointer;
+     
      always @(posedge clk or posedge rst) begin
         if (rst) begin
             write_pointer<=0;
-            counter<=0;
         end
         else begin
             if (cs & wr_en & ~full ) begin
-                FIFO[write_pointer]<=data_in;
-                counter<=counter+1;
-                write_pointer<=write_pointer+1;
-                if (write_pointer == FIFO_Depth-1) begin
-                write_pointer<=0;
+                FIFO[write_pointer[addrwidth-1:0]]<=data_in;
+                if (write_pointer[addrwidth-1:0] == FIFO_Depth-1) begin
+                    if (write_pointer[addrwidth]==1) begin
+                        write_pointer[addrwidth]<=1'b0;
+                        write_pointer[addrwidth-1:0]<=0;
+                    end
+                    else begin
+                        write_pointer[addrwidth-1:0]<=0;
+                        write_pointer[addrwidth]<=1'b1;
+                    end
                 end
+                else  write_pointer<=write_pointer+1;
             end   
         end
     end
@@ -32,16 +37,22 @@ module SYNC_FIFO #(parameter FIFO_Depth = 3, DATA_WIDTH=32 )
         end
         else begin
             if (cs & rd_en & ~empty ) begin
-                data_out<=FIFO[read_pointer];
-                counter<=counter-1;
-                read_pointer<=read_pointer+1;
-                if (read_pointer == FIFO_Depth-1) begin
-                read_pointer<=0;
+                data_out<=FIFO[read_pointer[addrwidth-1:0]];
+                if (read_pointer[addrwidth-1:0] == FIFO_Depth-1) begin
+                    if (read_pointer[addrwidth]==1) begin
+                        read_pointer[addrwidth]<=1'b0;
+                        read_pointer[addrwidth-1:0]<=0;
+                    end
+                    else begin
+                        read_pointer[addrwidth-1:0]<=0;
+                        read_pointer[addrwidth]<=1'b1;
+                    end
                 end
+                else  read_pointer<=read_pointer+1;
             end
             
         end
     end
-    assign  full= (counter==FIFO_Depth);
-    assign empty=(counter==0);
+    assign  full= ((~(write_pointer[addrwidth])==read_pointer[addrwidth]) & (write_pointer[addrwidth-1:0]==read_pointer[addrwidth-1:0]));
+    assign empty=(read_pointer==write_pointer);
 endmodule
