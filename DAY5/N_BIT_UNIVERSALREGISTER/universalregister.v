@@ -8,12 +8,12 @@ module universalregister(input [3:0]pi,input in, clk,rst,input [2:0]s,output reg
             case (s)
                 3'b000, 3'b010 :shift<={in,shift[n-1:1]}; //SISO SIPO RIGHT
                 3'b001,3'b011 :shift <={shift[n-2:0],in};//SISO SIPO LEFT
-                3'b100 :if (load) begin shift <= pi; load=0; end //PISO RIGHTSHIFT
+                3'b100 :if (load) begin shift <= pi; load<=0; end //PISO RIGHTSHIFT
                        else shift<={1'b0,shift[n-1:1]}; 
-                3'b101 : if (load) begin shift <= pi;  load=0;  end  //PISO LEFT SHIFT
+                3'b101 : if (load) begin shift <= pi;  load<=0;  end  //PISO LEFT SHIFT
                        else shift<={shift[n-2:0],1'b0};
                 3'b110: shift<=pi;                  //PIPO
-                default shift<=shift;
+                default: shift<=shift;
             endcase
         end
     end
