@@ -5,7 +5,7 @@ module SYNCHRONOUS_FIFO#(parameter FIFO_Depth = 1000, DATA_WIDTH=32 )
      output reg [DATA_WIDTH-1:0] data_out,
      output full, empty);
      
-     localparam addrwidth=$clog2(FIFO_Depth);
+     localparam addrwidth=$clog2((FIFO_Depth==1)?2:FIFO_Depth);
      reg [DATA_WIDTH-1:0] FIFO [FIFO_Depth-1:0];
      reg [addrwidth:0] read_pointer;
      reg [addrwidth:0] write_pointer;
